@@ -1,10 +1,10 @@
-import numpy as np
 import pandas as pd
 from typing import List
+from .base import Extractor
 from nltk import word_tokenize, sent_tokenize
 
 
-class TextExtractor:
+class ManualFeatureExtract(Extractor):
     """
     Class to extract some hand-engineered features from StackExchange text
     bodies given as rendered html.
@@ -22,7 +22,8 @@ class TextExtractor:
     ]
 
     EXAMPLE_ABBREV: List[str] = [
-        "example", "ex."
+        "example",
+        r"e\.g\."
     ]
 
     def __init__(self, data: pd.DataFrame):
@@ -40,8 +41,7 @@ class TextExtractor:
         """
         self.__data["num_question_marks"] = self.__data[self.BODY_COL]\
             .str\
-            .findall(r"\?+")\
-            .map(len)
+            .count(r"\?+")
 
     def count_words(self):
         """
@@ -53,8 +53,7 @@ class TextExtractor:
             .str\
             .replace(r"<[^<>]+>", " ")\
             .str\
-            .findall(r"(?<=\s)[a-zA-Z]+(?=[^a-zA-Z]?)")\
-            .map(len)
+            .count(r"(?<=\s)[a-zA-Z]+(?=[^a-zA-Z]?)")
 
         # NLTK version
         # self.__data["word_count"] = self.__data[self.BODY_COL]\
@@ -85,8 +84,7 @@ class TextExtractor:
             .str \
             .lower() \
             .str \
-            .findall(expression) \
-            .map(len)
+            .count(expression)
 
     def count_whs(self):
         """
@@ -94,6 +92,22 @@ class TextExtractor:
         :return:
         """
         self.count_word_occurences(self.WH_WORDS, "wh_word")
+
+    def count_examples(self):
+        """
+        Count occurrences of the word 'example' or its abbreviations.
+        :return:
+        """
+        self.count_word_occurences(self.EXAMPLE_ABBREV, "example")
+
+    def count_line_breaks(self):
+        """
+        Count the number of line breaks in the question body.
+        :return:
+        """
+        self.__data["n_linebreaks"] = self.__data[self.BODY_COL]\
+            .str\
+            .count(r"\n")
 
     def process_data(self) -> pd.DataFrame:
         """
@@ -104,4 +118,6 @@ class TextExtractor:
         self.count_whs()
         self.count_sentences()
         self.count_words()
+        self.count_examples()
+        self.count_line_breaks()
         return self.df
