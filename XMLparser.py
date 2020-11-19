@@ -3,7 +3,7 @@ from xml.etree.ElementTree import ElementTree
 import numpy as np
 import pandas as pd
 from os import listdir
-from os.path import splitext
+from os.path import splitext, join
 import datetime
 
 
@@ -66,16 +66,18 @@ def processAnswer(row, dic, pos):
 
     Outputs: None (it modifies dic in place)
     '''
+    try:
+        # Position of the answer's question in dic's values:
+        posParent = pos[row.attrib['ParentId']]
 
-    # Position of the answer's question in dic's values:
-    posParent = pos[row.attrib['ParentId']]
-
-    if dic['time_til_first_answer'][posParent] == float('inf'):
-        time = datetime.datetime.strptime(
-            row.attrib['CreationDate'], '%Y-%m-%dT%H:%M:%S.%f')
-        dic['time_til_first_answer'][posParent] = max(
-            1/3600,
-            (time - dic['time'][posParent])/datetime.timedelta(hours=1))
+        if dic['time_til_first_answer'][posParent] == float('inf'):
+            time = datetime.datetime.strptime(
+                row.attrib['CreationDate'], '%Y-%m-%dT%H:%M:%S.%f')
+            dic['time_til_first_answer'][posParent] = max(
+                1/3600,
+                (time - dic['time'][posParent])/datetime.timedelta(hours=1))
+    except KeyError:
+        print("[ERROR] Parent not found: ", row.attrib['ParentId'])
 
 
 def XMLparser(folder):
@@ -104,7 +106,7 @@ def XMLparser(folder):
 
         if splitext(file)[1] == '.xml':  # check for the right extension
 
-            xmlroot = ElementTree(file=file).getroot()
+            xmlroot = ElementTree(file=join(folder, file)).getroot()
 
             for row in xmlroot:
 
