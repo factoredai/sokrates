@@ -152,3 +152,7 @@ dmypy.json
 # Data files
 **/*.csv
 **/*.xml
+
+# Compressed data files
+**/*.zip
+**/*.7z
