@@ -11,6 +11,9 @@ class ManualFeatureExtract(Extractor):
     """
     Class to extract some hand-engineered features from StackExchange text
     bodies given as rendered html.
+
+    Usage:
+    >>> out_df = ManualFeatureExtract.process_df(input_df)
     """
 
     BODY_COL: str = "body"  #: Name of column containing text body in the df
@@ -38,6 +41,15 @@ class ManualFeatureExtract(Extractor):
     @property
     def df(self) -> pd.DataFrame:
         return self.__data
+
+    @classmethod
+    def process_df(cls, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Process a dataframe to extract the text features.
+        :param df: Input dataframe with a body and a title column.
+        :return:
+        """
+        return cls(df).process_data()
 
     def tokenize_strings(self, column: str) -> pd.Series:
         """
