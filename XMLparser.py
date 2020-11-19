@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-from xml import etree
+from xml.etree.ElementTree import ElementTree
 import pandas as pd
 from os import listdir
 from os.path import splitext
@@ -22,11 +22,14 @@ def processQuestion(row, dic, pos):
 
     pos[row.attrib['Id']] = len(dic['n_links'])  # position of the processed question in dic's values
 
-    html = BeautifulSoup(row.attrib['Body']).find_all(['body', 'a', 'ul', 'ol'])
+    soup = BeautifulSoup(row.attrib['Body'], 'html.parser')
+    html_tags = soup.find_all(['a', 'ul', 'ol'])
 
     dic['id'].append(int(row.attrib['Id']))
-    dic['title'].append(BeautifulSoup(row.attrib['Title']).find('body').get_text())  # parse HTML in the title and append to dic
+    dic['body'].append(soup.get_text())
+    dic['title'].append(row.attrib['Title'])  # parse HTML in the title and append to dic
     dic['n_tags'].append(row.attrib['Tags'].count('<'))
+    dic['n_views'].append(int(row.attrib['ViewCount']))
     dic['time'].append(datetime.datetime.strptime(row.attrib['CreationDate'], '%Y-%m-%dT%H:%M:%S.%f'))
     dic['n_answers'].append(int(row.attrib['AnswerCount']))
     dic['score'].append(int(row.attrib['Score']))
@@ -36,7 +39,7 @@ def processQuestion(row, dic, pos):
     dic['n_links'].append(0)
     dic['n_lists'].append(0)
 
-    for t in html:
+    for t in html_tags:
         if t.name == 'a':
             dic['n_links'][-1] += 1
         elif t.name == 'ul' or t.name == 'ol':
@@ -80,15 +83,15 @@ def XMLparser(folder):
                                 'n_links', 'n_tags', 'n_lists', and 'y'
     '''
 
-    dic = {'folder': [], 'id': [], 'body': [], 'title': [], 'n_links': [], 'n_tags': [],
-           'n_lists': [], 'time': [], 'n_answers': [], 'score': [], 'time_til_first_answer': []}
+    dic = {'folder': [], 'id': [], 'body': [], 'title': [], 'n_links': [], 'n_tags': [], 'n_lists': [],
+           'n_views': [], 'time': [], 'n_answers': [], 'score': [], 'time_til_first_answer': []}
     pos = {}  # dictionary (key = Id, value = position) to keep track of the position in dic's values where each question Id lies
 
     for file in listdir(folder):
 
         if splitext(file)[1] == '.xml':  # check for the right extension
 
-            xmlroot = etree.ElementTree.ElementTree(file=file).getroot()
+            xmlroot = ElementTree(file=file).getroot()
 
             for row in xmlroot:
 
@@ -101,9 +104,5 @@ def XMLparser(folder):
 
     df = pd.DataFrame(dic)
     df['y'] = df['score'] * df['n_answers'] / (df['time_til_first_answer'] + 1e-8)
-    
+
     return df
-
-
-if __name__ == '__main__':
-    XMLparser('./')
