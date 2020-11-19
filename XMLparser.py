@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 from xml.etree.ElementTree import ElementTree
+import numpy as np
 import pandas as pd
 from os import listdir
 from os.path import splitext
@@ -20,21 +21,25 @@ def processQuestion(row, dic, pos):
     Outputs: None (it modifies pos and dic in place)
     '''
 
-    pos[row.attrib['Id']] = len(dic['n_links'])  # position of the processed question in dic's values
+    # Position of the processed question in dic's values:
+    pos[row.attrib['Id']] = len(dic['n_links'])
 
     soup = BeautifulSoup(row.attrib['Body'], 'html.parser')
     html_tags = soup.find_all(['a', 'ul', 'ol'])
 
     dic['id'].append(int(row.attrib['Id']))
     dic['body'].append(soup.get_text())
-    dic['title'].append(row.attrib['Title'])  # parse HTML in the title and append to dic
+    dic['title'].append(row.attrib['Title'])
     dic['n_tags'].append(row.attrib['Tags'].count('<'))
     dic['n_views'].append(int(row.attrib['ViewCount']))
-    dic['time'].append(datetime.datetime.strptime(row.attrib['CreationDate'], '%Y-%m-%dT%H:%M:%S.%f'))
+    dic['time'].append(
+        datetime.datetime.strptime(
+            row.attrib['CreationDate'], '%Y-%m-%dT%H:%M:%S.%f'))
     dic['n_answers'].append(int(row.attrib['AnswerCount']))
     dic['score'].append(int(row.attrib['Score']))
 
-    dic['time_til_first_answer'].append(float('inf'))  # this will be changed if an answer to this question is processed later
+    # This will be changed if an answer to this question is processed later:
+    dic['time_til_first_answer'].append(float('inf'))
 
     dic['n_links'].append(0)
     dic['n_lists'].append(0)
@@ -62,11 +67,15 @@ def processAnswer(row, dic, pos):
     Outputs: None (it modifies dic in place)
     '''
 
-    posParent = pos[row.attrib['ParentId']]  # position of the answer's question in dic's values
+    # Position of the answer's question in dic's values:
+    posParent = pos[row.attrib['ParentId']]
 
     if dic['time_til_first_answer'][posParent] == float('inf'):
-        time = datetime.datetime.strptime(row.attrib['CreationDate'], '%Y-%m-%dT%H:%M:%S.%f')
-        dic['time_til_first_answer'][posParent] = (time - dic['time'][posParent])/datetime.timedelta(hours=1)
+        time = datetime.datetime.strptime(
+            row.attrib['CreationDate'], '%Y-%m-%dT%H:%M:%S.%f')
+        dic['time_til_first_answer'][posParent] = max(
+            1/3600,
+            (time - dic['time'][posParent])/datetime.timedelta(hours=1))
 
 
 def XMLparser(folder):
@@ -83,9 +92,13 @@ def XMLparser(folder):
                                 'n_links', 'n_tags', 'n_lists', and 'y'
     '''
 
-    dic = {'folder': [], 'id': [], 'body': [], 'title': [], 'n_links': [], 'n_tags': [], 'n_lists': [],
-           'n_views': [], 'time': [], 'n_answers': [], 'score': [], 'time_til_first_answer': []}
-    pos = {}  # dictionary (key = Id, value = position) to keep track of the position in dic's values where each question Id lies
+    dic = {'folder': [], 'id': [], 'body': [], 'title': [], 'n_links': [],
+           'n_tags': [], 'n_lists': [], 'n_views': [], 'time': [],
+           'n_answers': [], 'score': [], 'time_til_first_answer': []}
+
+    # Dictionary (key = Id, value = position) to keep track of the position in
+    # dic's values where each question Id lies:
+    pos = {}
 
     for file in listdir(folder):
 
@@ -103,6 +116,7 @@ def XMLparser(folder):
                     processAnswer(row, dic, pos)
 
     df = pd.DataFrame(dic)
-    df['y'] = df['score'] * df['n_answers'] / (df['time_til_first_answer'] + 1e-8)
+    df['y'] = df['score'].map(lambda x: x + 1 if x >= 0 else np.exp(x)) \
+        * df['n_answers'] / df['time_til_first_answer']
 
     return df
