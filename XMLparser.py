@@ -1,9 +1,8 @@
+import os
 from bs4 import BeautifulSoup
 from xml.etree.ElementTree import ElementTree
 import numpy as np
 import pandas as pd
-from os import listdir
-from os.path import splitext
 import datetime
 
 
@@ -66,26 +65,28 @@ def processAnswer(row, dic, pos):
 
     Outputs: None (it modifies dic in place)
     '''
+    try:
+        # Position of the answer's question in dic's values:
+        posParent = pos[row.attrib['ParentId']]
 
-    # Position of the answer's question in dic's values:
-    posParent = pos[row.attrib['ParentId']]
+        if dic['time_til_first_answer'][posParent] == float('inf'):
+            time = datetime.datetime.strptime(
+                row.attrib['CreationDate'], '%Y-%m-%dT%H:%M:%S.%f')
+            dic['time_til_first_answer'][posParent] = max(
+                1/3600,
+                (time - dic['time'][posParent])/datetime.timedelta(hours=1))
+    except KeyError:
+        print("[ERROR] Parent not found: ", row.attrib['ParentId'])
 
-    if dic['time_til_first_answer'][posParent] == float('inf'):
-        time = datetime.datetime.strptime(
-            row.attrib['CreationDate'], '%Y-%m-%dT%H:%M:%S.%f')
-        dic['time_til_first_answer'][posParent] = max(
-            1/3600,
-            (time - dic['time'][posParent])/datetime.timedelta(hours=1))
 
-
-def XMLparser(folder):
+def XMLparser(path_str: str):
     '''
     Function that parses 'Posts' XML files from the Stack Exchange dataset
     to extract the body of the question, the numer of links, the numer of
     tags, and the number of lists.
 
     Inputs:
-        folder (str): path to the XML file to past
+        path_str (str): path to the XML Posts file or a dir that contains one
 
     Outputs:
         df (pandas dataframe): dataframe with columns 'body', 'title',
@@ -100,20 +101,40 @@ def XMLparser(folder):
     # dic's values where each question Id lies:
     pos = {}
 
-    for file in listdir(folder):
+    # Get path to Posts.xml file
+    if os.path.isdir(path_str):
+        if "Posts.xml" not in os.listdir(path_str):
+            raise FileNotFoundError("Posts.xml file not found in dir!")
+        filepath = os.path.join(path_str, "Posts.xml")
+    elif os.path.isfile(path_str) and path_str.endswith('.xml'):
+        filepath = path_str
+    else:
+        raise FileNotFoundError("Invalid path!")
 
-        if splitext(file)[1] == '.xml':  # check for the right extension
+    xmlroot = ElementTree(file=filepath).getroot()
+    for row in xmlroot:
 
-            xmlroot = ElementTree(file=file).getroot()
+        if row.attrib['PostTypeId'] == '1':
+            dic['folder'].append(path_str)
+            processQuestion(row, dic, pos)
 
-            for row in xmlroot:
+        if row.attrib['PostTypeId'] == '2':
+            processAnswer(row, dic, pos)
 
-                if row.attrib['PostTypeId'] == '1':
-                    dic['folder'].append(folder)
-                    processQuestion(row, dic, pos)
-
-                if row.attrib['PostTypeId'] == '2':
-                    processAnswer(row, dic, pos)
+    # for file in os.listdir(path_str):
+    #
+    #     if os.path.splitext(file)[1] == '.xml':  # check for the right extension
+    #
+    #         xmlroot = ElementTree(file=os.path.join(path_str, file)).getroot()
+    #
+    #         for row in xmlroot:
+    #
+    #             if row.attrib['PostTypeId'] == '1':
+    #                 dic['folder'].append(path_str)
+    #                 processQuestion(row, dic, pos)
+    #
+    #             if row.attrib['PostTypeId'] == '2':
+    #                 processAnswer(row, dic, pos)
 
     df = pd.DataFrame(dic)
     df['y'] = df['score'].map(lambda x: x + 1 if x >= 0 else np.exp(x)) \

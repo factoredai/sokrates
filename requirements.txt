@@ -1,1 +1,14 @@
 beautifulsoup4==4.9.1
+click==7.1.2
+dill==0.3.3
+joblib==0.17.0
+nltk==3.5
+numpy==1.19.4
+pandarallel==1.5.1
+pandas==1.1.4
+python-dateutil==2.8.1
+pytz==2020.4
+regex==2020.11.13
+six==1.15.0
+soupsieve==2.0.1
+tqdm==4.52.0
