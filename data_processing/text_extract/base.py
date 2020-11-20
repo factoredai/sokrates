@@ -4,12 +4,11 @@ from abc import ABC, abstractmethod
 
 class Extractor(ABC):
     """
-    Base class to represent feature extractors.
+    Interface to represent feature extractors.
     """
 
-    @classmethod
     @abstractmethod
-    def process_df(cls, df: pd.DataFrame) -> pd.DataFrame:
+    def process_df(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Process the given dataframe to extract features.
         :param df:
