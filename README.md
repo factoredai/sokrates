@@ -6,6 +6,7 @@
 * [Repository Contents](#repository-contents)
 * [Instructions and Usage](#instructions-and-usage)
   * [Setup](#setup)
+  * [Building the Dataset](#building-the-dataset)
 
 ## About
 'Sokrates' is an ML-powered assistant to help write better questions!
@@ -37,6 +38,14 @@ nltk.download("punkt")
 ```
 
 ### Building the dataset
+To build the dataset, first you must have downloaded and decompressed the data files
+from the stack exchange data dump. After this you will have a collection of directories
+(one per topic) containing `.xml` files. If `mydir` is the directory that contains these
+folders and `outdir` is the directory where you want to store the output csvs, you can 
+generate them with:
+```bash
+python make_dataset_csv.py mydir outdir
+```
 
 
 [Back to top](#sokrates)
