@@ -21,15 +21,12 @@ def processQuestion(row, dic, pos):
     '''
 
     # Position of the processed question in dic's values:
-    pos[row.attrib['Id']] = len(dic['n_links'])
-
-    soup = BeautifulSoup(row.attrib['Body'], 'html.parser')
-    html_tags = soup.find_all(['a', 'ul', 'ol'])
+    pos[row.attrib['Id']] = len(dic['id'])
 
     dic['id'].append(int(row.attrib['Id']))
-    dic['body'].append(soup.get_text())
+    dic["body"].append(row.attrib['Body'])
     dic['title'].append(row.attrib['Title'])
-    dic['n_tags'].append(row.attrib['Tags'].count('<'))
+    dic['tags'].append(row.attrib['Tags'])
     dic['n_views'].append(int(row.attrib['ViewCount']))
     dic['time'].append(
         datetime.datetime.strptime(
@@ -39,17 +36,6 @@ def processQuestion(row, dic, pos):
 
     # This will be changed if an answer to this question is processed later:
     dic['time_til_first_answer'].append(float('inf'))
-
-    dic['n_links'].append(0)
-    dic['n_lists'].append(0)
-
-    for t in html_tags:
-        if t.name == 'a':
-            dic['n_links'][-1] += 1
-        elif t.name == 'ul' or t.name == 'ol':
-            dic['n_lists'][-1] += 1
-        else:
-            dic['body'].append(t.get_text())
 
 
 def processAnswer(row, dic, pos):
@@ -93,8 +79,8 @@ def XMLparser(path_str: str):
                                 'n_links', 'n_tags', 'n_lists', and 'y'
     '''
 
-    dic = {'folder': [], 'id': [], 'body': [], 'title': [], 'n_links': [],
-           'n_tags': [], 'n_lists': [], 'n_views': [], 'time': [],
+    dic = {'folder': [], 'id': [], 'body': [], 'title': [],
+           'tags': [], 'n_views': [], 'time': [],
            'n_answers': [], 'score': [], 'time_til_first_answer': []}
 
     # Dictionary (key = Id, value = position) to keep track of the position in

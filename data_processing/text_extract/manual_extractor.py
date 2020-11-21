@@ -1,7 +1,8 @@
 import pandas as pd
-from typing import List
 from .base import Extractor
+from bs4 import BeautifulSoup
 from pandarallel import pandarallel
+from typing import List, Optional, Tuple
 from nltk import word_tokenize, sent_tokenize
 
 pandarallel.initialize()
@@ -13,7 +14,7 @@ class ManualFeatureExtract(Extractor):
     bodies given as rendered html.
 
     Usage:
-    >>> out_df = ManualFeatureExtract.process_df(input_df)
+    >>> out_df = ManualFeatureExtract().process_df(input_df)
     """
 
     BODY_COL: str = "body"  #: Name of column containing text body in the df
@@ -34,22 +35,66 @@ class ManualFeatureExtract(Extractor):
         r"e\.g\."
     ]
 
-    def __init__(self, data: pd.DataFrame):
-        self.__data = data.copy()
+    def __init__(self, batch: bool = True):
+        self.__data: Optional[pd.DataFrame] = None
         self.__words_vecs = None
+        self.__batch = batch
+
+    @property
+    def batch(self) -> bool:
+        return self.__batch
 
     @property
     def df(self) -> pd.DataFrame:
         return self.__data
 
-    @classmethod
-    def process_df(cls, df: pd.DataFrame) -> pd.DataFrame:
+    def process_df(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Process a dataframe to extract the text features.
         :param df: Input dataframe with a body and a title column.
         :return:
         """
-        return cls(df).process_data()
+        self.__data = df.copy()
+        out = self.process_data()
+        self.__data = None
+        return out
+
+    @staticmethod
+    def count_lists_links(soup: BeautifulSoup) -> Tuple[int, int]:
+        """
+        Count the lists and links from a BeautifulSoup.
+        :return:
+        """
+        n_lists = 0
+        n_links = 0
+        for tag in soup.find_all(["a", "ul", "ol"]):
+            if tag.name == "a":
+                n_links += 1
+            elif tag.name in {"ol", "ul"}:
+                n_lists += 1
+        return n_lists, n_links
+
+    def process_html(self):
+        """
+        Extract html info (number of lists, links).
+        :return:
+        """
+        soups = \
+            self.__data[self.BODY_COL]\
+            .map(lambda b: BeautifulSoup(b, "html.parser"))
+
+        self.__data[self.BODY_COL] = soups.map(lambda s: s.get_text())
+
+        listnums = soups.map(self.count_lists_links)
+        self.__data["n_lists"] = listnums.parallel_map(lambda p: p[0])
+        self.__data["n_links"] = listnums.parallel_map(lambda p: p[1])
+
+    def count_tags(self):
+        """
+        Count the number of tags the question has.
+        :return:
+        """
+        self.__data["n_tags"] = self.__data["tags"].str.count("<")
 
     def tokenize_strings(self, column: str) -> pd.Series:
         """
@@ -62,7 +107,6 @@ class ManualFeatureExtract(Extractor):
         :return:
         """
         tokenized = self.__data[column]\
-            .str.replace(r"<[^<>]+>", " ")\
             .str.lower() \
             .str.replace(r"[^a-z]", " ") \
             .parallel_map(word_tokenize)
@@ -122,8 +166,6 @@ class ManualFeatureExtract(Extractor):
         :return:
         """
         self.__data["sentence_count"] = self.__data[self.BODY_COL] \
-            .str \
-            .replace(r"<[^<>]+>", " ") \
             .parallel_map(sent_tokenize)\
             .parallel_map(len)
 
@@ -179,6 +221,8 @@ class ManualFeatureExtract(Extractor):
         Adds the hand-engineered features and returns the processed dataframe.
         :return:
         """
+        self.process_html()
+        self.count_tags()
         self.body_question_marks()
         self.count_whs()
         self.count_sentences()
