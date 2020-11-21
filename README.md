@@ -7,6 +7,7 @@
 * [Instructions and Usage](#instructions-and-usage)
   * [Setup](#setup)
   * [Building the Dataset](#building-the-dataset)
+  * [Running Simple Baseline](#running-simple-baseline)
 
 ## About
 'Sokrates' is an ML-powered assistant to help write better questions!
@@ -51,6 +52,15 @@ generate them with:
 ```bash
 python -m data_processing mydir outdir
 ```
+
+### Running Simple Baseline
+To run the first simple baseline of the model run:
+```bash
+python -m ml_models
+```
+This will then prompt you for the title of your question and the body,
+which could be a path to a file where the question is stored as rendered
+HTML.
 
 
 [Back to top](#sokrates)
