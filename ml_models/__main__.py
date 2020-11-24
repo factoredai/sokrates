@@ -1,7 +1,7 @@
 import os
 from .baseline_manager import BaselineManager
 
-PATH = os.path.join("assets", "LassoModel.pkl")
+PATH = os.path.join("ensambles baseline", "assets", "LogisticRegressionModel.pkl")
 
 mgr = BaselineManager(PATH)
 

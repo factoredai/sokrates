@@ -1,11 +1,8 @@
 import pandas as pd
 from .base import Extractor
 from bs4 import BeautifulSoup
-from pandarallel import pandarallel
 from typing import List, Optional, Tuple
 from nltk import word_tokenize, sent_tokenize
-
-pandarallel.initialize()
 
 
 class ManualFeatureExtract(Extractor):
@@ -86,8 +83,8 @@ class ManualFeatureExtract(Extractor):
         self.__data[self.BODY_COL] = soups.map(lambda s: s.get_text())
 
         listnums = soups.map(self.count_lists_links)
-        self.__data["n_lists"] = listnums.parallel_map(lambda p: p[0])
-        self.__data["n_links"] = listnums.parallel_map(lambda p: p[1])
+        self.__data["n_lists"] = listnums.map(lambda p: p[0])
+        self.__data["n_links"] = listnums.map(lambda p: p[1])
 
     def count_tags(self):
         """
@@ -109,7 +106,7 @@ class ManualFeatureExtract(Extractor):
         tokenized = self.__data[column]\
             .str.lower() \
             .str.replace(r"[^a-z]", " ") \
-            .parallel_map(word_tokenize)
+            .map(word_tokenize)
         return tokenized
 
     def word_vec(self) -> pd.Series:
@@ -154,7 +151,7 @@ class ManualFeatureExtract(Extractor):
         :return:
         """
         self.__data["word_count"] = self.word_vec()\
-            .parallel_map(len)
+            .map(len)
 
     def count_sentences(self):
         """
@@ -166,8 +163,8 @@ class ManualFeatureExtract(Extractor):
         :return:
         """
         self.__data["sentence_count"] = self.__data[self.BODY_COL] \
-            .parallel_map(sent_tokenize)\
-            .parallel_map(len)
+            .map(sent_tokenize)\
+            .map(len)
 
     def count_word_occurences(self, words: List[str], key: str):
         """
@@ -214,7 +211,7 @@ class ManualFeatureExtract(Extractor):
         """
         self.__data["title_word_count"] = \
             self.tokenize_strings(self.TITLE_COL)\
-            .parallel_map(len)
+            .map(len)
 
     def process_data(self) -> pd.DataFrame:
         """
