@@ -1,5 +1,6 @@
 import tensorflow as tf
 from tensorflow import keras
+from scipy.special import expit
 
 
 class Model():
@@ -7,6 +8,7 @@ class Model():
         self.train_data = specs['train_data']
         self.val_data = specs['val_data']
         self.max_tokens = specs['max_tokens']
+        self.sequence_length = specs['sequence_length']
         self.embedding_dimension = specs['embedding_dimension']
         self.lstm_layers = specs['lstm_layers']
         self.lstm_activation = specs['lstm_activation']
@@ -43,7 +45,10 @@ class Model():
     def build_tokenizer(self):
         if not self.tokenizer:
             self.tokenizer = keras.layers.experimental.\
-                preprocessing.TextVectorization(self.max_tokens)
+                preprocessing.TextVectorization(
+                    max_tokens=self.max_tokens,
+                    output_sequence_length=self.sequence_length
+                )
             self.tokenizer.adapt(self.train_data['title'].to_list())
 
     def build_normalizer(self):
@@ -130,7 +135,7 @@ class Model():
 
         Y_val = self.val_data['y'].to_numpy()
 
-        self.model.fit(
+        self.history = self.model.fit(
             X,
             Y,
             batch_size=self.batch_size,
@@ -139,8 +144,21 @@ class Model():
             callbacks=self.callbacks
         )
 
-    def predict(self, X):
-        return self.model.predict(X)
+        self.history = self.history.history
 
-    def evaluate(self, X, Y):
-        return self.model.evaluate(X, Y, batch_size=self.batch_size)
+    def predict(self, X):
+        return expit(self.model.predict(X))
+
+    def evaluate(self):
+        X_val = [
+            self.val_data['title'].to_numpy(),
+            self.val_data[self.numeric_features].to_numpy()
+        ]
+
+        Y_val = self.val_data['y'].to_numpy()
+
+        print('\nStarting evaluation on validation set:')
+
+        return self.model.evaluate(
+            X_val, Y_val, batch_size=min(len(X_val[1]), 200000)
+        )

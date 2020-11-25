@@ -88,12 +88,15 @@ def experiment(file, specs, tokenizer=None, normalizer=None):
     model.fit()
 
     results = {
-        k: v for k, v in specs.items() if k not in ['train_data', 'val_data']
+        k: v for k, v in specs.items() if k not in {
+            'train_data', 'val_data', 'tokenizer', 'normalizer'
+        }
     }
 
     results['val_accuracy'] = model.evaluate()[1]
 
     with open(file, 'a') as fopen:
         json.dump(results, fopen)
+        fopen.write('\n')
 
     return model, results
