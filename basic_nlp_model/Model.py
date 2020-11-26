@@ -17,7 +17,40 @@ class Model():
         self.batch_size = specs['batch_size']
         self.epochs = specs['epochs']
 
-        self.optimizer = specs['optimizer']
+        self.reg_type = {
+            'l1': keras.regularizers.l1,
+            'l2': keras.regularizers.l2
+        }[specs.get('reg_type', 'l2')]
+
+        self.lstm_reg = specs.get('lstm_reg', [None]*len(self.lstm_layers))
+        assert len(self.lstm_reg) == len(self.lstm_layers)
+        self.lstm_reg = [
+            self.reg_type(reg) if reg else None for reg in self.lstm_reg
+        ]
+
+        self.dense_reg = specs.get('dense_reg', [None]*len(self.dense_layers))
+        assert len(self.dense_reg) == len(self.dense_layers)
+        self.dense_reg = [
+            self.reg_type(reg) if reg else None for reg in self.dense_reg
+        ]
+
+        self.lstm_dropout = specs.get(
+            'lstm_dropout', [None]*len(self.lstm_layers)
+        )
+        assert len(self.lstm_dropout) == len(self.lstm_layers)
+        self.lstm_dropout = [
+            keras.layers.Dropout(rate) if rate else None
+            for rate in self.lstm_dropout
+        ]
+
+        self.dense_dropout = specs.get(
+            'dense_dropout', [None]*len(self.dense_layers)
+        )
+        assert len(self.dense_dropout) == len(self.dense_layers)
+        self.dense_dropout = [
+            keras.layers.Dropout(rate) if rate else None
+            for rate in self.dense_dropout
+        ]
 
         # Optimizer and callbaks must be passed as eval-ready strings:
         self.optimizer = eval(specs['optimizer'])
@@ -69,33 +102,42 @@ class Model():
         )
 
         # Recurrent part:
-        rnn = keras.Sequential([
-            self.tokenizer,
-            embedding,
-
-            *[
+        rnn = keras.Sequential([self.tokenizer, embedding])
+        for units, reg, dropout in zip(
+            self.lstm_layers[:-1], self.lstm_reg[:-1], self.lstm_dropout[:-1]
+        ):
+            rnn.add(
                 keras.layers.Bidirectional(keras.layers.LSTM(
-                    units,
-                    activation=self.lstm_activation,
-                    return_sequences=True
+                        units,
+                        activation=self.lstm_activation,
+                        return_sequences=True,
+                        kernel_regularizer=reg,
+                        recurrent_regularizer=reg
                 ))
-                for units in self.lstm_layers[:-1]
-            ],
+            )
+            if dropout:
+                rnn.add(dropout)
 
+        rnn.add(
             keras.layers.Bidirectional(keras.layers.LSTM(
                 units=self.lstm_layers[-1],
-                activation=self.lstm_activation
+                activation=self.lstm_activation,
+                kernel_regularizer=self.lstm_reg[-1],
+                recurrent_regularizer=self.lstm_reg[-1]
             ))
-        ])
+        )
+        if dropout:
+            rnn.add(self.lstm_dropout[-1])
 
         # Dense part:
         dnn = keras.Sequential([
             *[
                 keras.layers.Dense(
                     units,
-                    activation=self.dense_activation
+                    activation=self.dense_activation,
+                    kernel_regularizer=reg
                 )
-                for units in self.dense_layers
+                for units, reg in zip(self.dense_layers, self.dense_reg)
             ],
 
             keras.layers.Dense(1)
