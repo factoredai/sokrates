@@ -25,8 +25,14 @@
   - The `make_dataset_csv` module uses `text_extract` and `XMLparser` to process the
     StackExchange `.xml` files and export them as csv.
 
-- The `ml_models` package cntains managers (wrappers) to handle the ML models
+- The `ml_models` package contains managers (wrappers) to handle the ML models
   themselves.
+
+- The `basic_nlp_model` package contains code to quickly build and test neural network
+  models on the dataset.
+
+- The `Exploration.ipynb` notebook contains exploratory analyses of variables as well
+  as some basic model tests.
 
 ## Instructions and Usage
 
