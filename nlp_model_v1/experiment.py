@@ -94,7 +94,8 @@ def experiment(file, specs, tokenizer=None, normalizer=None):
         }
     }
 
-    results['val_accuracy'] = model.evaluate()[1]
+    results['train_accuracy'] = model.history['train_accuracy'][-1]
+    results['val_accuracy'] = model.history['val_accuracy'][-1]
 
     with open(file, 'a') as fopen:
         json.dump(results, fopen)

@@ -17,6 +17,7 @@ class Model():
         self.title_activation = specs.get('title_activation', 'tanh')
         self.dense_layers = specs['dense_layers']
         self.dense_activation = specs['dense_activation']
+        self.normalize_features = specs.get('normalize_features', True)
         self.batch_size = specs['batch_size']
         self.epochs = specs['epochs']
 
@@ -42,6 +43,12 @@ class Model():
         self.dense_reg = [
             self.reg_type(reg) if reg else None for reg in self.dense_reg
         ]
+
+        self.embedding_dropout = specs.get('embedding_dropout', None)
+        if self.embedding_dropout:
+            self.embedding_dropout = keras.layers.Dropout(
+                self.embedding_dropout
+            )
 
         self.body_dropout = specs.get(
             'body_dropout', [None]*len(self.body_layers)
@@ -121,24 +128,27 @@ class Model():
             )
 
     def build_normalizer(self):
-        if not self.normalizer:
-            self.normalizer = keras.layers.experimental.\
-                preprocessing.Normalization()
-            self.normalizer.adapt(
-                self.train_data[self.numeric_features].to_numpy()
-            )
+        if self.normalize_features:
+            if not self.normalizer:
+                self.normalizer = keras.layers.experimental.\
+                    preprocessing.Normalization()
+                self.normalizer.adapt(
+                    self.train_data[self.numeric_features].to_numpy()
+                )
+        else:
+            self.normalizer = lambda x: x
 
     def build_model(self):
         self.build_tokenizer()
         self.build_normalizer()
 
-        embeddings = keras.layers.Embedding(
+        self.embeddings = keras.layers.Embedding(
             self.max_tokens,
             self.embedding_dimension
         )
 
         # Recurrent part for question body:
-        rnn_body = keras.Sequential([embeddings])
+        rnn_body = keras.Sequential([])
         for units, reg, dropout in zip(
             self.body_layers[:-1], self.body_reg[:-1], self.body_dropout[:-1]
         ):
@@ -151,6 +161,7 @@ class Model():
                         recurrent_regularizer=reg
                 ))
             )
+            rnn_body.add(keras.layers.BatchNormalization())
             if dropout:
                 rnn_body.add(dropout)
 
@@ -167,7 +178,7 @@ class Model():
             rnn_body.add(self.body_dropout[-1])
 
         # Recurrent part for question title:
-        rnn_title = keras.Sequential([embeddings])
+        rnn_title = keras.Sequential([])
         for units, reg, dropout in zip(
             self.title_layers[:-1],
             self.title_reg[:-1],
@@ -182,6 +193,7 @@ class Model():
                         recurrent_regularizer=reg
                 ))
             )
+            rnn_title.add(keras.layers.BatchNormalization())
             if dropout:
                 rnn_title.add(dropout)
 
@@ -198,46 +210,49 @@ class Model():
             rnn_title.add(self.title_dropout[-1])
 
         # Dense part:
-        dnn = keras.Sequential([
-            *[
+        dnn = keras.Sequential([])
+        for units, reg, dropout in zip(
+            self.dense_layers,
+            self.dense_reg,
+            self.dense_dropout
+        ):
+            dnn.add(
                 keras.layers.Dense(
                     units,
                     activation=self.dense_activation,
                     kernel_regularizer=reg
                 )
-                for units, reg in zip(self.dense_layers, self.dense_reg)
-            ],
+            )
+            dnn.add(keras.layers.BatchNormalization())
+            if dropout:
+                dnn.add(dropout)
 
-            keras.layers.Dense(1)
-        ])
+            dnn.add(keras.layers.Dense(1))
 
         # Define inputs:
         inputs = [
-            keras.Input((1,), dtype=tf.string, name='body'),
-            keras.Input((1,), dtype=tf.string, name='title'),
+            keras.Input(
+                (self.body_sequence_length,),
+                dtype=tf.float32,
+                name='body_tokenized'
+            ),
+            keras.Input(
+                (self.title_sequence_length,),
+                dtype=tf.float32,
+                name='title_tokenized'
+            ),
             keras.Input((11,), dtype=tf.float32)
         ]
 
         # Define output:
-        body_output = self.tokenizer(inputs[0])
-        # body_output = keras.preprocessing.sequence.pad_sequences(
-        #     body_output,
-        #     maxlen=self.body_sequence_length,
-        #     padding='post',
-        #     truncating='post'
-        # )
-        body_output = body_output[:, :self.body_sequence_length]  # Truncate
+        body_output = self.embeddings(inputs[0])
+        body_output = self.embedding_dropout(body_output)
         body_output = rnn_body(body_output)
-        title_output = self.tokenizer(inputs[1])
-        # title_output = keras.preprocessing.sequence.pad_sequences(
-        #     title_output,
-        #     maxlen=self.title_sequence_length,
-        #     padding='post',
-        #     truncating='post'
-        # )
-        title_output = title_output[:, :self.title_sequence_length]  # Truncate
+        title_output = self.embeddings(inputs[1])
+        title_output = self.embedding_dropout(title_output)
         title_output = rnn_title(title_output)
         output = tf.concat([body_output, title_output, inputs[2]], axis=1)
+        output = keras.layers.BatchNormalization()(output)
         output = dnn(output)
 
         self.model = keras.Model(inputs, output)
@@ -252,17 +267,25 @@ class Model():
 
     def fit(self):
         X = [
-            self.train_data['body'].to_numpy(),
-            self.train_data['title'].to_numpy(),
-            self.train_data[self.numeric_features].to_numpy()
+            self.tokenizer(self.train_data['body'].to_numpy())
+            [:, :self.body_sequence_length],
+
+            self.tokenizer(self.train_data['title'].to_numpy())
+            [:, :self.title_sequence_length],
+
+            self.normalizer(self.train_data[self.numeric_features].to_numpy())
         ]
 
         Y = self.train_data['y'].to_numpy()
 
         X_val = [
-            self.val_data['body'].to_numpy(),
-            self.val_data['title'].to_numpy(),
-            self.val_data[self.numeric_features].to_numpy()
+            self.tokenizer(self.val_data['body'].to_numpy())
+            [:, :self.body_sequence_length],
+
+            self.tokenizer(self.val_data['title'].to_numpy())
+            [:, :self.title_sequence_length],
+
+            self.normalizer(self.val_data[self.numeric_features].to_numpy())
         ]
 
         Y_val = self.val_data['y'].to_numpy()
@@ -276,23 +299,34 @@ class Model():
             callbacks=self.callbacks
         )
 
-        self.embeddings = self.model.layers[0].layers[0]
-
         self.history = self.history.history
 
     def predict(self, X):
-        return expit(self.model.predict(X))
+        X = [
+            self.tokenizer(X['body'].to_numpy())
+            [:, :self.body_sequence_length],
 
-    def evaluate(self):
-        X_val = [
-            self.val_data['title'].to_numpy(),
-            self.val_data[self.numeric_features].to_numpy()
+            self.tokenizer(X['title'].to_numpy())
+            [:, :self.title_sequence_length],
+
+            self.normalizer(X[self.numeric_features].to_numpy())
         ]
 
-        Y_val = self.val_data['y'].to_numpy()
+        return expit(self.model.predict(X))
 
-        print('\nStarting evaluation on validation set:')
+    def evaluate(self, X, Y):
+        X = [
+            self.tokenizer(X['body'].to_numpy())
+            [:, :self.body_sequence_length],
+
+            self.tokenizer(X['title'].to_numpy())
+            [:, :self.title_sequence_length],
+
+            self.normalizer(X[self.numeric_features].to_numpy())
+        ]
+
+        Y = self.train_data['y'].to_numpy()
 
         return self.model.evaluate(
-            X_val, Y_val, batch_size=min(len(X_val[1]), 200000)
+            X, Y, batch_size=min(len(X[1]), 200000)
         )
