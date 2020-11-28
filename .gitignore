@@ -156,3 +156,6 @@ dmypy.json
 # Compressed data files
 **/*.zip
 **/*.7z
+
+# EDA images
+images/
