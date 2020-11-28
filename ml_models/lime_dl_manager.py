@@ -1,9 +1,10 @@
 import os
 import json
+import numpy as np
 import pandas as pd
 import tensorflow as tf
-from typing import List, Tuple
 from .base import ModelManager
+from typing import List, Tuple, Callable
 from lime.lime_tabular import LimeTabularExplainer
 from data_processing.text_extract import ManualFeatureExtract
 
@@ -126,6 +127,48 @@ class LIME3InputsMgr(ModelManager):
         feat = df[self.FEATURES].copy()
         return title_input, body_input, feat
 
+    def make_lime_feat_function(
+            self,
+            title: str,
+            body: str) -> Callable[[pd.DataFrame], np.ndarray]:
+        """
+        Makes a function that can be used for LIME explanations on the hand
+        made features.
+        :param title: Title of the given question.
+        :param body: Body of the given question.
+        :return:
+        """
+        title_seq = self.process_titles([title])
+        body_seq = self.process_bodies([body])
+
+        def predict_probs(data: pd.DataFrame) -> np.ndarray:
+            titles = np.repeat(title_seq, data.shape[0], axis=0)
+            bodies = np.repeat(body_seq, data.shape[0], axis=0)
+            probas = self.__model.predict((titles, bodies, data))
+            return np.hstack((1. - probas, probas))
+
+        return predict_probs
+
+    def interpret(self, title: str, body: str, features: pd.DataFrame):
+        """
+        Uses LIME to give an interpretation of a prediction.
+        :param title:
+        :param body:
+        :param features:
+        :return:
+        """
+
+        # TODO: This is not working . . .
+        # Explainer should probably be saved when creating the model and then
+        # just loaded, so that it can see the training data.
+        explainer = LimeTabularExplainer(
+            features,
+            feature_names=list(features.columns)
+        )
+        func = self.make_lime_feat_function(title, body)
+        explanation = explainer.explain_instance(features.iloc[0], func)
+        return explanation.as_list()
+
     def make_prediction(self, title: str, body: str):
         """
         Uses the model to make a prediction from the title and body of a
@@ -141,5 +184,8 @@ class LIME3InputsMgr(ModelManager):
         })
         data = self.extractor.process_df(data)
         prediction = self.__model.predict(self.df_to_inputs(data))
+        print("PRED: ", prediction)
 
+        # TODO
+        # explanation = self.interpret(title, body, data[self.FEATURES])
         return prediction
