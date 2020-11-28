@@ -159,3 +159,6 @@ dmypy.json
 
 # EDA images
 images/
+
+# Temp models storage
+models-temp/
