@@ -40,6 +40,7 @@ class LIME3InputsMgr(ModelManager):
         self.__body_len = 0
         self.__model = None
         self.__tokenizer = None
+        self.__explainer = None
         self.load_model()
         self.set_extractor(ManualFeatureExtract())
 
@@ -115,6 +116,9 @@ class LIME3InputsMgr(ModelManager):
             self.__title_len = meta["title_pad_length"]
             self.__body_len = meta["body_pad_length"]
 
+        self.load_explainer()
+        print("[INFO] Explainer loaded!")
+
     def df_to_inputs(self, df: pd.DataFrame) -> Tuple:
         """
         Turns a dataframe given by the extractor into the inputs expected by
@@ -149,6 +153,22 @@ class LIME3InputsMgr(ModelManager):
 
         return predict_probs
 
+    def load_explainer(self):
+        """
+        Loads the LIME explainer.
+        :return:
+        """
+
+        # TODO: This is a temporary fix due to problems pickling LIME
+        # explainers. One should be able to do this without loading the whole
+        # train df each time . . .
+        self.__explainer = LimeTabularExplainer(
+            pd.read_csv(
+                os.path.join(self.model_path, "train_data.csv")
+            )[self.FEATURES].values,
+            feature_names=list(self.FEATURES)
+        )
+
     def interpret(self, title: str, body: str, features: pd.DataFrame):
         """
         Uses LIME to give an interpretation of a prediction.
@@ -157,16 +177,11 @@ class LIME3InputsMgr(ModelManager):
         :param features:
         :return:
         """
-
-        # TODO: This is not working . . .
-        # Explainer should probably be saved when creating the model and then
-        # just loaded, so that it can see the training data.
-        explainer = LimeTabularExplainer(
-            features,
-            feature_names=list(features.columns)
-        )
         func = self.make_lime_feat_function(title, body)
-        explanation = explainer.explain_instance(features.iloc[0], func)
+        explanation = self.__explainer.explain_instance(
+            features.iloc[0],
+            func
+        )
         return explanation.as_list()
 
     def make_prediction(self, title: str, body: str):
@@ -175,7 +190,7 @@ class LIME3InputsMgr(ModelManager):
         question.
         :param title:
         :param body:
-        :return:
+        :return: The prediction and LIME explanation list.
         """
         data = pd.DataFrame({
             "title": [title],
@@ -186,6 +201,5 @@ class LIME3InputsMgr(ModelManager):
         prediction = self.__model.predict(self.df_to_inputs(data))
         print("PRED: ", prediction)
 
-        # TODO
-        # explanation = self.interpret(title, body, data[self.FEATURES])
-        return prediction
+        explanation = self.interpret(title, body, data[self.FEATURES])
+        return prediction, explanation
