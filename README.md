@@ -58,6 +58,8 @@ generate them with:
 ```bash
 python -m data_processing mydir outdir
 ```
+You can also add an optional third argument (`True` or `False`) to force the
+re-processing of existing csvs.
 
 ### Running Simple Baseline
 To run the first simple baseline of the model run:

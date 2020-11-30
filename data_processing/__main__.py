@@ -17,6 +17,9 @@ if len(argv) > 2:
 else:
     outpath = "Dataset"
 
+# Force re-processing of existing files or not
+force = len(argv) > 3 and bool(argv[3])
+
 if not os.path.isdir(outpath):
     os.makedirs(outpath)
 
@@ -28,8 +31,9 @@ for fp in os.listdir(input_dir):
 
     name = fp.split(".")[0] + ".csv"
     out_file = os.path.join(outpath, name)
-    df = ManualFeatureExtract().process_df(XMLparser(full_path))
-    df.to_csv(out_file, index=False, encoding="utf-8")
+    if force or (not os.path.isfile(out_file)):
+        df = ManualFeatureExtract().process_df(XMLparser(full_path))
+        df.to_csv(out_file, index=False, encoding="utf-8")
     print(f"[INFO] Finished processing {full_path} file!")
 
 print("[INFO] Processing done!")
