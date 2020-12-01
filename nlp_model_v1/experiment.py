@@ -21,8 +21,8 @@ def load_data(file):
     df.loc[:, 'y'] = df.apply(class_decider, axis=1)
 
     data = df[[
-        'body',
         'title',
+        'body',
         'n_lists',
         'n_links',
         'n_tags',
@@ -94,7 +94,7 @@ def experiment(file, specs, tokenizer=None, normalizer=None):
         }
     }
 
-    results['train_accuracy'] = model.history['train_accuracy'][-1]
+    results['train_accuracy'] = model.history['accuracy'][-1]
     results['val_accuracy'] = model.history['val_accuracy'][-1]
 
     with open(file, 'a') as fopen:

@@ -77,15 +77,32 @@ class Model():
             for rate in self.dense_dropout
         ]
 
-        # Specs that must be passed as eval-ready strings:
-        self.optimizer = eval(specs['optimizer'])
+        self.optimizer = {
+            'adam': keras.optimizers.Adam,
+            'rmsprop': keras.optimizers.RMSprop,
+            'sgd': keras.optimizers.SGD,
+            'nadam': keras.optimizers.Nadam,
+            'adamax': keras.optimizers.Adamax,
+            'adagrad': keras.optimizers.Adagrad,
+            'adadelta': keras.optimizers.Adadelta
+        }[specs['optimizer_type']](
+            **specs.get('optimizer_kwargs', {})
+        )
+
+        self.body_layer_type = {
+            'gru': keras.layers.GRU,
+            'lstm': keras.layers.LSTM,
+            'rnn': keras.layers.RNN
+        }[specs.get('body_layer_type', 'lstm')]
+
+        self.title_layer_type = {
+            'gru': keras.layers.GRU,
+            'lstm': keras.layers.LSTM,
+            'rnn': keras.layers.RNN
+        }[specs.get('title_layer_type', 'lstm')]
+
+        # Callbacks must be passed as an eval-ready string:
         self.callbacks = eval(specs.get('callbacks', '[]'))
-        self.body_layer_type = eval(specs.get(
-            'body_layer_type', "keras.layers.LSTM"
-        ))
-        self.title_layer_type = eval(specs.get(
-            'title_layer_type', "keras.layers.LSTM"
-        ))
 
         self.numeric_features = [
             'n_lists',
@@ -232,25 +249,27 @@ class Model():
         # Define inputs:
         inputs = [
             keras.Input(
-                (self.body_sequence_length,),
-                dtype=tf.float32,
-                name='body_tokenized'
-            ),
-            keras.Input(
                 (self.title_sequence_length,),
                 dtype=tf.float32,
                 name='title_tokenized'
+            ),
+            keras.Input(
+                (self.body_sequence_length,),
+                dtype=tf.float32,
+                name='body_tokenized'
             ),
             keras.Input((11,), dtype=tf.float32)
         ]
 
         # Define output:
-        body_output = self.embeddings(inputs[0])
-        body_output = self.embedding_dropout(body_output)
-        body_output = rnn_body(body_output)
-        title_output = self.embeddings(inputs[1])
-        title_output = self.embedding_dropout(title_output)
+        title_output = self.embeddings(inputs[0])
+        if self.embedding_dropout:
+            title_output = self.embedding_dropout(title_output)
         title_output = rnn_title(title_output)
+        body_output = self.embeddings(inputs[1])
+        if self.embedding_dropout:
+            body_output = self.embedding_dropout(body_output)
+        body_output = rnn_body(body_output)
         output = tf.concat([body_output, title_output, inputs[2]], axis=1)
         output = keras.layers.BatchNormalization()(output)
         output = dnn(output)
@@ -267,11 +286,11 @@ class Model():
 
     def fit(self):
         X = [
-            self.tokenizer(self.train_data['body'].to_numpy())
-            [:, :self.body_sequence_length],
-
             self.tokenizer(self.train_data['title'].to_numpy())
             [:, :self.title_sequence_length],
+
+            self.tokenizer(self.train_data['body'].to_numpy())
+            [:, :self.body_sequence_length],
 
             self.normalizer(self.train_data[self.numeric_features].to_numpy())
         ]
@@ -279,11 +298,11 @@ class Model():
         Y = self.train_data['y'].to_numpy()
 
         X_val = [
-            self.tokenizer(self.val_data['body'].to_numpy())
-            [:, :self.body_sequence_length],
-
             self.tokenizer(self.val_data['title'].to_numpy())
             [:, :self.title_sequence_length],
+
+            self.tokenizer(self.val_data['body'].to_numpy())
+            [:, :self.body_sequence_length],
 
             self.normalizer(self.val_data[self.numeric_features].to_numpy())
         ]
@@ -303,11 +322,11 @@ class Model():
 
     def predict(self, X):
         X = [
-            self.tokenizer(X['body'].to_numpy())
-            [:, :self.body_sequence_length],
-
             self.tokenizer(X['title'].to_numpy())
             [:, :self.title_sequence_length],
+
+            self.tokenizer(X['body'].to_numpy())
+            [:, :self.body_sequence_length],
 
             self.normalizer(X[self.numeric_features].to_numpy())
         ]
@@ -316,11 +335,11 @@ class Model():
 
     def evaluate(self, X, Y):
         X = [
-            self.tokenizer(X['body'].to_numpy())
-            [:, :self.body_sequence_length],
-
             self.tokenizer(X['title'].to_numpy())
             [:, :self.title_sequence_length],
+
+            self.tokenizer(X['body'].to_numpy())
+            [:, :self.body_sequence_length],
 
             self.normalizer(X[self.numeric_features].to_numpy())
         ]
