@@ -126,7 +126,7 @@ class Model():
                 recurrent_regularizer=self.lstm_reg[-1]
             ))
         )
-        if dropout:
+        if self.lstm_dropout[-1]:
             rnn.add(self.lstm_dropout[-1])
 
         # Dense part:
