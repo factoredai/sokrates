@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from .base import ModelManager
+from .utils import make_explainer
 from typing import List, Tuple, Callable
 from data_processing.text_extract import ManualFeatureExtract
 
@@ -28,7 +29,7 @@ class LIME3InputsMgr(ModelManager):
         "n_lists",
     ]
 
-    def __init__(self, model_path: str):
+    def __init__(self, model_path: str, train_csv_name: str = "train.csv"):
         """
         :param model_path: Path to a directory that contains the model stored
             as h5, the tokenizer (as JSON), the explainer (dill) and the
@@ -49,6 +50,7 @@ class LIME3InputsMgr(ModelManager):
         self.__explainer = None
         self.load_model()
         self.set_extractor(ManualFeatureExtract())
+        self.__csv_path = train_csv_name
 
     @property
     def model_path(self) -> str:
@@ -165,10 +167,18 @@ class LIME3InputsMgr(ModelManager):
         :return:
         """
         explainer_path = os.path.join(self.model_path, "explainer.dill")
+        csv_path = os.path.join(self.model_path, self.__csv_path)
         if os.path.isfile(explainer_path):
             with open(explainer_path, "rb") as f:
                 self.__explainer = dill.load(f)
-
+        elif os.path.isfile(csv_path):
+            print("[WARN] Making new explainer!")
+            self.__explainer = make_explainer(
+                pd.read_csv(csv_path),
+                self.FEATURES
+            )
+            with open(explainer_path, "wb") as f:
+                dill.dump(self.__explainer, f)
         else:
             print("[WARN] Explainer not found!")
 
