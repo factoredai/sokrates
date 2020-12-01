@@ -1,5 +1,6 @@
 import os
 import json
+import dill
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -31,7 +32,13 @@ class LIME3InputsMgr(ModelManager):
     def __init__(self, model_path: str):
         """
         :param model_path: Path to a directory that contains the model stored
-            as h5, the tokenizer (as JSON) and the metadata JSON.
+            as h5, the tokenizer (as JSON), the explainer (dill) and the
+            metadata JSON. That is, the directory must contain the following
+            files:
+            - model.h5
+            - tokenizer.json
+            - meta.json
+            - explainer.dill
         """
         self.__model_path = model_path
         if not os.path.isdir(model_path):
@@ -162,6 +169,8 @@ class LIME3InputsMgr(ModelManager):
         # TODO: This is a temporary fix due to problems pickling LIME
         # explainers. One should be able to do this without loading the whole
         # train df each time . . .
+        # with open(os.path.join(self.model_path, "explainer.dill"), "rb") as f:
+        #     self.__explainer = dill.load(f)
         self.__explainer = LimeTabularExplainer(
             pd.read_csv(
                 os.path.join(self.model_path, "train_data.csv")
