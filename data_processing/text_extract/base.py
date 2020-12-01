@@ -15,12 +15,3 @@ class Extractor(ABC):
         :return:
         """
         pass
-
-    @abstractmethod
-    def process_data(self) -> pd.DataFrame:
-        """
-        Extract features from a dataframe and return a df with the new
-        columns.
-        :return:
-        """
-        pass
