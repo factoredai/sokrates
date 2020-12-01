@@ -48,9 +48,9 @@ class LIME3InputsMgr(ModelManager):
         self.__model = None
         self.__tokenizer = None
         self.__explainer = None
+        self.__csv_path = train_csv_name
         self.load_model()
         self.set_extractor(ManualFeatureExtract())
-        self.__csv_path = train_csv_name
 
     @property
     def model_path(self) -> str:
