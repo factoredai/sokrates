@@ -6,7 +6,6 @@ import pandas as pd
 import tensorflow as tf
 from .base import ModelManager
 from typing import List, Tuple, Callable
-from lime.lime_tabular import LimeTabularExplainer
 from data_processing.text_extract import ManualFeatureExtract
 
 
@@ -165,18 +164,13 @@ class LIME3InputsMgr(ModelManager):
         Loads the LIME explainer.
         :return:
         """
+        explainer_path = os.path.join(self.model_path, "explainer.dill")
+        if os.path.isfile(explainer_path):
+            with open(explainer_path, "rb") as f:
+                self.__explainer = dill.load(f)
 
-        # TODO: This is a temporary fix due to problems pickling LIME
-        # explainers. One should be able to do this without loading the whole
-        # train df each time . . .
-        # with open(os.path.join(self.model_path, "explainer.dill"), "rb") as f:
-        #     self.__explainer = dill.load(f)
-        self.__explainer = LimeTabularExplainer(
-            pd.read_csv(
-                os.path.join(self.model_path, "train_data.csv")
-            )[self.FEATURES].values,
-            feature_names=list(self.FEATURES)
-        )
+        else:
+            print("[WARN] Explainer not found!")
 
     def interpret(self, title: str, body: str, features: pd.DataFrame):
         """
@@ -186,12 +180,17 @@ class LIME3InputsMgr(ModelManager):
         :param features:
         :return:
         """
-        func = self.make_lime_feat_function(title, body)
-        explanation = self.__explainer.explain_instance(
-            features.iloc[0],
-            func
-        )
-        return explanation.as_list()
+        if self.__explainer is not None:
+            func = self.make_lime_feat_function(title, body)
+            explanation = self.__explainer.explain_instance(
+                features.iloc[0],
+                func
+            )
+            return explanation.as_list()
+
+        else:
+            print("[WARN] No explainer loaded!")
+            return []
 
     def make_prediction(self, title: str, body: str):
         """
