@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+
+<head>
+    <h1>Sokrates</h1>
+</head>
+
+<body>
+    <div>
+        <!-- <form method="POST" onsubmit="callAPI()"> -->
+                <row><input type="text" name="title" id="title"></input></row>
+                <row><textarea name="body" id="body" rows="4" cols="50" placeholder="Body"></textarea></row>
+                <row><button onclick="callAPI()">Submit to Sokrates</button></row>
+        <!-- </form> -->
+        <textarea name = "veredict" id="veredict" rows="10" cols="100"></textarea>
+    </div>
+</body>
+
+<script>
+    async function callAPI() {
+        console.log("This is a test")
+        const title = document.getElementById("title").value
+        const body = document.getElementById("body").value
+        const options = {
+            method: "POST",
+            headers: { "Content-Type" : "application/json; charset=UTF-8" },
+            body: JSON.stringify({ title: title, body: body })
+        }
+        
+        const response = await fetch("http://localhost:3002/", options)
+        const res_data = await response.json()
+        console.log(res_data)
+
+        let vertext = document.getElementById("veredict")
+        vertext.value = res_data
+    }
+</script>
