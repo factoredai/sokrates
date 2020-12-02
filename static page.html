@@ -7,11 +7,11 @@
 <body>
     <div>
         <!-- <form method="POST" onsubmit="callAPI()"> -->
-                <row><input type="text" name="title" id="title"></input></row>
-                <row><textarea name="body" id="body" rows="4" cols="50" placeholder="Body"></textarea></row>
+                <row><textarea name="title" id="title" placeholder="Post title" style="font-family: 'Arial'"></textarea></row>
+                <row><textarea name="body" id="body" rows="4" cols="50" placeholder="Post body" style="font-family: 'Arial'"></textarea></row>
                 <row><button onclick="callAPI()">Submit to Sokrates</button></row>
         <!-- </form> -->
-        <textarea name = "veredict" id="veredict" rows="10" cols="100"></textarea>
+        <textarea name = "veredict" id="veredict" rows="10" cols="100" style="font-family: 'Arial'"></textarea>
     </div>
 </body>
 
@@ -26,7 +26,7 @@
             body: JSON.stringify({ title: title, body: body })
         }
         
-        const response = await fetch("http://localhost:3002/", options)
+        const response = await fetch("http://localhost:3000/json", options)
         const res_data = await response.json()
         console.log(res_data)
 

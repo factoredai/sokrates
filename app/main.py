@@ -1,7 +1,8 @@
-from fastapi import FastAPI, Form
+from fastapi import FastAPI, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 import boto3
 import json
 import os
@@ -53,6 +54,8 @@ class Question(BaseModel):
 
 app = FastAPI()
 
+templates = Jinja2Templates(directory="templates")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -64,11 +67,11 @@ app.add_middleware(
 
 @app.get('/', response_class=HTMLResponse)
 async def get_func():
-    with open('./dynamic page.html', 'rt') as fopen:
+    with open('./templates/bare template.html', 'rt') as fopen:
         return fopen.read()
 
 
-@app.post('/')
+@app.post('/json')
 async def main(form: Question):
     '''
     ``form`` is a Pydantic model containing the title and body sent in a post
@@ -83,15 +86,18 @@ async def main(form: Question):
     return res
 
 
-@app.post('/internal/')
-async def main_internal(title: str = Form(...), body: str = Form(...)):
+@app.post('/', response_class=HTMLResponse)
+async def main_internal(
+    request: Request, title: str = Form(...), body: str = Form(...)
+):
     prediction, explanation = manager.make_prediction(title, body)
     res = ExplanationParser(prediction, explanation).get_string()
-    return res
+    return templates.TemplateResponse(
+        "dynamic template.html",
+        {'request': request, 'title': title, 'body': body, 'veredict': res}
+    )
 
 
 if __name__ == '__main__':
-    #__spec__ = "ModuleSpec(name='builtins', loader=<class '_frozen_importlib.BuiltinImporter'>)"
-    #__spec__ = None
     import uvicorn
-    uvicorn.run("main:app", host='127.0.0.1', port=3002, reload=True)
+    uvicorn.run("main:app", host='127.0.0.1', port=3000, reload=True)
