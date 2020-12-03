@@ -13,7 +13,9 @@
 'Sokrates' is an ML-powered assistant to help write better questions!
 
 ## Repository Contents
-- The `data_processing` package contains data extraction and preprocessing
+- The `app` directory contains all code necessary to run the HTTP service.
+- Most code is contained in the `app/app_core` package.
+- The `app_core.data_processing` package contains data extraction and preprocessing
   functionalities. Within it:
 
   - The `text_extract` package contains classes used to extract features from 
@@ -25,14 +27,14 @@
   - The `make_dataset_csv` module uses `text_extract` and `XMLparser` to process the
     StackExchange `.xml` files and export them as csv.
 
-- The `ml_models` package contains managers (wrappers) to handle the ML models
+- The `app_core.ml_models` package contains managers (wrappers) to handle the ML models
   themselves.
 
 - The `basic_nlp_model` package contains code to quickly build and test neural network
   models on the dataset.
 
-- The `Exploration.ipynb` notebook contains exploratory analyses of variables as well
-  as some basic model tests.
+- The `notebooks` directory contains several Jupyter notebooks with data exploration
+  and model testing.
 
 ## Instructions and Usage
 
@@ -69,6 +71,21 @@ python -m ml_models
 This will then prompt you for the title of your question and the body,
 which could be a path to a file where the question is stored as rendered
 HTML.
+
+### Running the Server (Docker)
+To start the HTTP server with docker, do the following:
+- First, [install Docker](https://www.docker.com/).
+- Second, prepare your `.env` file. It must contain the variables specified
+  in the `app/.env.example` file. Note that you must have access to the S3
+  bucker where we are storing our models!
+- Third, navigate to the `app` directory and build the docker image with:
+```shell script
+docker build -t sokrates:<version> .
+```
+- Finally, run the container with
+```shell script
+docker run -p 3000:3000 --env-file <path-to-.env-file> sokrates:<version>
+```
 
 
 [Back to top](#sokrates)
