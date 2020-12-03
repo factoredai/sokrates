@@ -7,7 +7,7 @@ import tensorflow as tf
 from .base import ModelManager
 from .utils import make_explainer
 from typing import List, Tuple, Callable
-from data_processing.text_extract import ManualFeatureExtract
+from ..data_processing.text_extract import ManualFeatureExtract
 
 
 class LIME3InputsMgr(ModelManager):

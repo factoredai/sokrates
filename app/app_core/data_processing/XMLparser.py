@@ -1,9 +1,8 @@
 import os
-from bs4 import BeautifulSoup
-from xml.etree.ElementTree import ElementTree
+import datetime
 import numpy as np
 import pandas as pd
-import datetime
+from xml.etree.ElementTree import ElementTree
 
 
 def processQuestion(row, dic, pos):

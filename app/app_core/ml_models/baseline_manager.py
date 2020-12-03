@@ -1,7 +1,7 @@
 import joblib
 import pandas as pd
 from .base import ModelManager
-from data_processing import text_extract
+from ..data_processing import text_extract
 
 
 class BaselineManager(ModelManager):

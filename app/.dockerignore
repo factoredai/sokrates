@@ -1,0 +1,25 @@
+
+# GIT
+.git/
+.git*
+
+# Env
+.env
+**/.env
+
+# Python
+**/__pycache__/*
+venv/
+
+# Jupyter
+**/*.ipynb
+**/.ipynb_checkpoints/*
+
+# Data
+**/*.xml
+**/*.csv
+**/*.zip
+**/*.7z
+
+# Other
+images/
