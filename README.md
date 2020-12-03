@@ -8,9 +8,17 @@
   * [Setup](#setup)
   * [Building the Dataset](#building-the-dataset)
   * [Running Simple Baseline](#running-simple-baseline)
+* [Running the Server](#running-the-server)
+  * [Run with Docker](#run-with-docker)
+  * [Run with Docker Compose](#run-with-docker-compose)
+  * [Note on Docker Startup Time](#note-on-docker-startup-time)
 
 ## About
 'Sokrates' is an ML-powered assistant to help write better questions!
+
+## Authors
+- Esteban Lopez: 
+- David Stiles: david@factored.ai
 
 ## Repository Contents
 - The `app` directory contains all code necessary to run the HTTP service.
@@ -72,7 +80,9 @@ This will then prompt you for the title of your question and the body,
 which could be a path to a file where the question is stored as rendered
 HTML.
 
-### Running the Server (Docker)
+## Running the Server
+
+### Run with Docker
 To start the HTTP server with docker, do the following:
 - First, [install Docker](https://www.docker.com/).
 - Second, prepare your `.env` file. It must contain the variables specified
@@ -84,8 +94,21 @@ docker build -t sokrates:<version> .
 ```
 - Finally, run the container with
 ```shell script
-docker run -p 3000:3000 --env-file <path-to-.env-file> sokrates:<version>
+docker run -p 3000:3000 --env-file <path-to-.env-file> -d sokrates:<version>
 ```
+This may take a minute or two to initialize while it downloads the model.
+
+## Run with Docker Compose
+If you have installed `docker-compose` and you prefer one-liners, you can also
+start the server by running
+```shell script
+docker-compose up
+```
+You can add the `--build` flag to update the image.
+
+### Note on Docker Startup Time
+If you want a faster startup time LOCALLY, you can persist the downloaded model
+from the container in a [Docker volume or bind mount](https://docs.docker.com/storage/volumes/).
 
 
 [Back to top](#sokrates)

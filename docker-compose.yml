@@ -1,0 +1,8 @@
+version: "2.4"
+services:
+  sokrates-app:
+    build: "app"
+    container_name: sokrates
+    ports:
+      - "3000:3000"
+    env_file: app/.env
