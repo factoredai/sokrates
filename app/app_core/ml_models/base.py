@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from data_processing.text_extract.base import Extractor
+from ..data_processing.text_extract.base import Extractor
 
 
 class ModelManager(ABC):

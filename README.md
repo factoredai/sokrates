@@ -3,17 +3,31 @@
 ## Contents
 
 * [About](#about)
+* [Authors](#authors)
 * [Repository Contents](#repository-contents)
 * [Instructions and Usage](#instructions-and-usage)
   * [Setup](#setup)
   * [Building the Dataset](#building-the-dataset)
   * [Running Simple Baseline](#running-simple-baseline)
+* [Running the Server](#running-the-server)
+  * [Run with Docker](#run-with-docker)
+  * [Run with Docker Compose](#run-with-docker-compose)
+  * [Note on Docker Startup Time](#note-on-docker-startup-time)
 
 ## About
 'Sokrates' is an ML-powered assistant to help write better questions!
 
+## Authors
+- Esteban Lopez: esteban@factored.ai
+- David Stiles: david@factored.ai
+
 ## Repository Contents
-- The `data_processing` package contains data extraction and preprocessing
+- The `app` directory contains all code necessary to run the HTTP service. Within it,
+  the `app_core` package handles all core logic such as model inference, while the
+  `api` package deals with handling HTTP requests for model inference. They communicate
+  through the `app_core.handlers` module.
+- Most code is contained in the `app/app_core` package.
+- The `app_core.data_processing` package contains data extraction and preprocessing
   functionalities. Within it:
 
   - The `text_extract` package contains classes used to extract features from 
@@ -25,14 +39,14 @@
   - The `make_dataset_csv` module uses `text_extract` and `XMLparser` to process the
     StackExchange `.xml` files and export them as csv.
 
-- The `ml_models` package contains managers (wrappers) to handle the ML models
+- The `app_core.ml_models` package contains managers (wrappers) to handle the ML models
   themselves.
 
 - The `basic_nlp_model` package contains code to quickly build and test neural network
   models on the dataset.
 
-- The `Exploration.ipynb` notebook contains exploratory analyses of variables as well
-  as some basic model tests.
+- The `notebooks` directory contains several Jupyter notebooks with data exploration
+  and model testing.
 
 ## Instructions and Usage
 
@@ -69,6 +83,36 @@ python -m ml_models
 This will then prompt you for the title of your question and the body,
 which could be a path to a file where the question is stored as rendered
 HTML.
+
+## Running the Server
+
+### Run with Docker
+To start the HTTP server with docker, do the following:
+- First, [install Docker](https://www.docker.com/).
+- Second, prepare your `.env` file. It must contain the variables specified
+  in the `app/.env.example` file. Note that you must have access to the S3
+  bucker where we are storing our models!
+- Third, navigate to the `app` directory and build the docker image with:
+```shell script
+docker build -t sokrates:<version> .
+```
+- Finally, run the container with
+```shell script
+docker run -p 3000:3000 --env-file <path-to-.env-file> -d sokrates:<version>
+```
+This may take a minute or two to initialize while it downloads the model.
+
+## Run with Docker Compose
+If you have installed `docker-compose` and you prefer one-liners, you can also
+start the server by running
+```shell script
+docker-compose up
+```
+You can add the `--build` flag to update the image.
+
+### Note on Docker Startup Time
+If you want a faster startup time LOCALLY, you can persist the downloaded model
+from the container in a [Docker volume or bind mount](https://docs.docker.com/storage/volumes/).
 
 
 [Back to top](#sokrates)
