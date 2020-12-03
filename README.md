@@ -18,11 +18,14 @@
 'Sokrates' is an ML-powered assistant to help write better questions!
 
 ## Authors
-- Esteban Lopez: 
+- Esteban Lopez: esteban@factored.ai
 - David Stiles: david@factored.ai
 
 ## Repository Contents
-- The `app` directory contains all code necessary to run the HTTP service.
+- The `app` directory contains all code necessary to run the HTTP service. Within it,
+  the `app_core` package handles all core logic such as model inference, while the
+  `api` package deals with handling HTTP requests for model inference. They communicate
+  through the `app_core.handlers` module.
 - Most code is contained in the `app/app_core` package.
 - The `app_core.data_processing` package contains data extraction and preprocessing
   functionalities. Within it:
