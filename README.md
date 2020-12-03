@@ -3,6 +3,7 @@
 ## Contents
 
 * [About](#about)
+* [Authors](#authors)
 * [Repository Contents](#repository-contents)
 * [Instructions and Usage](#instructions-and-usage)
   * [Setup](#setup)
