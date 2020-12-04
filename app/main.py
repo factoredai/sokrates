@@ -23,6 +23,10 @@ app.add_middleware(
 
 @app.get('/', response_class=HTMLResponse)
 async def get_func():
+    """
+    Serves the main form page.
+    :return:
+    """
     with open('./templates/bare template.html', 'rt') as fopen:
         return fopen.read()
 
