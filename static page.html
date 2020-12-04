@@ -93,7 +93,7 @@
 </head>
 
 <body>
-    <form class="product-form" method="POST">
+    <div class="product-form">
         <div class="form-control">
             <label for="title">Post title</label>
             <textarea 
@@ -123,12 +123,12 @@
                 id="veredict"
                 rows="5"></textarea>
         </div>
-    </form>
+    </div>
 </body>
 
 <script>
     async function callAPI() {
-        console.log("This is a test")
+        console.log("Sending request to API")
         const title = document.getElementById("title").value
         const body = document.getElementById("body").value
         const options = {
@@ -137,7 +137,7 @@
             body: JSON.stringify({ title: title, body: body })
         }
         
-        const response = await fetch("http://localhost:3000/v1/json", options)
+        const response = await fetch("http://54.202.65.113:3000/v1/json", options)
         const res_data = await response.json()
         console.log(res_data)
 
