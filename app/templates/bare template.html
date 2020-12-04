@@ -1,18 +1,127 @@
 <!DOCTYPE html>
 
+<style>
+    .form-control {
+        margin: 1rem 0;
+    }
+    
+    .form-control label,
+    .form-control input,
+    .form-control textarea {
+        display: block;
+        width: 100%;
+        margin-bottom: 0.25rem;
+    }
+    
+    .form-control input,
+    .form-control textarea {
+        border: 1px solid #a1a1a1;
+        font: inherit;
+        border-radius: 2px;
+    }
+    
+    .form-control input:focus,
+    .form-control textarea:focus {
+        outline-color: #0a2081;
+    }
+    
+    .form-control input.invalid,
+    .form-control textarea.invalid {
+        border-color: red;
+    }
+
+    .product-form {
+        width: 60rem;
+        max-width: 90%;
+        margin: auto;
+        display: block;
+    }
+
+    .product-item {
+        width: 20rem;
+        max-width: 95%;
+        margin: 1rem;
+    }
+
+    .product__title {
+        font-size: 1.2rem;
+        text-align: center;
+    }
+
+    .product__price {
+        text-align: center;
+        color: #4d4d4d;
+        margin-bottom: 0.5rem;
+    }
+
+    .product__description {
+        text-align: center;
+    }
+
+    .btn {
+        display: inline-block;
+        padding: 0.25rem 1rem;
+        text-decoration: none;
+        font: inherit;
+        border: 1px solid #0a2081;
+        color: #0a2081;
+        background: white;
+        border-radius: 3px;
+        cursor: pointer;
+    }
+
+    .btn:hover,
+    .btn:active {
+        background-color: #0a2081;
+        color: white;
+    }
+
+    .btn.danger {
+        color: red;
+        border-color: red;
+    }
+
+    .btn.danger:hover,
+    .btn.danger:active {
+        background: red;
+        color: white;
+    }
+</style>
+
 <head>
-    <h1>Sokrates</h1>
+    <h1 style="text-align: center;">Sokrates</h1>
 </head>
 
 <body>
-    <div>
-        <form method="POST" action="/v1">
-            <col>
-                <textarea name="title" id="title" placeholder="Post title" style="font-family: 'Arial'"></textarea>
-                <textarea name="body" id="body" rows="4" cols="50" placeholder="Post body" style="font-family: 'Arial'"></textarea>
-                <button type="submit">Submit to Sokrates</button>
-            </col>
-        </form>
-        <textarea name = "veredict" id="veredict" rows="10" cols="100" style="font-family: 'Arial'"></textarea>
-    </div>
+    <form class="product-form" action="/v1" method="POST">
+        <div class="form-control">
+            <label for="title">Post title</label>
+            <textarea 
+                name="title" 
+                id="title" 
+                rows="3"
+                placeholder="Post title"></textarea>
+        </div>
+
+        <div class="form-control">
+            <label for="body">Post body</label>
+            <textarea 
+                name="body" 
+                id="body"
+                rows="15"
+                placeholder="Post body"></textarea>
+        </div>
+
+        <div style="text-align: center;">
+            <button class="btn" type="submit">Submit to Sokrates</button>
+        </div>
+
+        <div class="form-control" style="margin-top:1.5cm;">
+            <label for="veredict">Sokrate's veredict</label>
+            <textarea 
+                name="veredict" 
+                id="veredict"
+                rows="5"></textarea>
+        </div>
+    </form>
 </body>
