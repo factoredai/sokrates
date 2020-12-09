@@ -8,3 +8,8 @@ REQ_FILES: List[str] = [
     "meta.json",
     "explainer.dill"
 ]
+
+ENVS = {
+    "development": "development",
+    "production": "production"
+}
