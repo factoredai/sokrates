@@ -89,9 +89,18 @@ HTML.
 ### Run with Docker
 To start the HTTP server with docker, do the following:
 - First, [install Docker](https://www.docker.com/).
-- Second, prepare your `.env` file. It must contain the variables specified
-  in the `app/.env.example` file. Note that you must have access to the S3
-  bucker where we are storing our models!
+- Second, prepare your `.env` file. It must follow this template:
+```.env
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+BUCKET_NAME=
+MODEL_PATH=
+ENV=development
+```
+- Note that you must have access to the S3 bucket where we are storing
+  our models! For production deployment, tne `ENV` variable must be set to
+  `production` and the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` variables
+  SHOULD NOT BE SET. The credentials should be handled via an AWS IAM role!
 - Third, navigate to the `app` directory and build the docker image with:
 ```shell script
 docker build -t sokrates:<version> .
@@ -102,7 +111,7 @@ docker run -p 3000:3000 --env-file <path-to-.env-file> -d sokrates:<version>
 ```
 This may take a minute or two to initialize while it downloads the model.
 
-## Run with Docker Compose
+### Run with Docker Compose
 If you have installed `docker-compose` and you prefer one-liners, you can also
 start the server by running
 ```shell script
