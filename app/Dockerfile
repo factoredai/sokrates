@@ -1,7 +1,7 @@
 FROM python:3.7-slim-buster
 
 LABEL NAME="Sokrates"\
-      VERSION="0.2"\
+      VERSION="0.3"\
       AUTHORS="Esteban Lopez, David Stiles"
 
 
