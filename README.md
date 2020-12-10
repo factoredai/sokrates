@@ -98,7 +98,7 @@ MODEL_PATH=
 ENV=development
 ```
 - Note that you must have access to the S3 bucket where we are storing
-  our models! For production deployment, tne `ENV` variable must be set to
+  our models! For production deployment, the `ENV` variable must be set to
   `production` and the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` variables
   SHOULD NOT BE SET. The credentials should be handled via an AWS IAM role!
 - Third, navigate to the `app` directory and build the docker image with:

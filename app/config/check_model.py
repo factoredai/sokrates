@@ -21,7 +21,7 @@ def get_s3_client():
     development, the `ENV` variable must be set to `development` and the
     `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` variables must be set. For
     production / deployment, `ENV` must be set to `production` and the AWS
-    credentials re not needed.
+    credentials are not needed.
     :return:
     """
     if os.getenv("ENV", "") == ENVS["production"]:
